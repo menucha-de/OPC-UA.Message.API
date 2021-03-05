@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="havis.opcua.message-api" default="publish" xmlns:ivy="antlib:org.apache.ivy.ant">
+	<property file="${basedir}/build.properties" />
+	<property name="basename" value="${ant.project.name}" />
+	<property name="build.dir" location="${basedir}/target" />
+	<property name="build.dir.classes" location="${build.dir}/classes" />
+	<property name="lib.dir" location="${basedir}/lib" />
+	<property name="resources.dir" location="${basedir}/src/main/resources" />
+	<property name="src.dir" location="${basedir}/src/main/java" />
+	<property name="doc.dir" location="${build.dir}/doc" />
+
+	<property file="${resources.dir}/MANIFEST.MF" prefix="manifest" />
+	<property file="${resources.dir}/build.properties" />
+
+	<import>
+		<url url="${ivy.url}/ant/default.xml" />
+	</import>
+
+	<path id="build.classpath">
+		<fileset dir="${lib.dir}" />
+	</path>
+
+	<!-- Checks if the build.properties file exists prints an error message if the file does not exist -->
+	<target name="check.build.properties">
+		<condition property="ivy.resolver" else="local">
+			<isset property="ivy.resolver" />
+		</condition>
+		<fail message="Missing property 'api.url'. Does 'build.properties' file exists?" unless="api.url" />
+		<fail message="Missing property 'ivy.url'. Does 'build.properties' file exists?" unless="ivy.url" />
+	</target>
+
+	<target name="clean-cache">
+		<ivy:cleancache />
+	</target>
+
+	<target name="clean" depends="clean-cache" description="Cleans the project.">
+		<delete dir="${build.dir}" />
+		<delete dir="${lib.dir}" />
+	</target>
+
+	<target name="clean-all" depends="clean-cache, clean" />
+
+	<target name="retrieve">
+		<ivy:retrieve conf="default" log="quiet" />
+	</target>
+
+	<!-- Compiles the java source files -->
+	<target name="compile" depends="check.build.properties, retrieve">
+		<mkdir dir="${build.dir.classes}" />
+		<javac srcdir="${src.dir}" destdir="${build.dir.classes}" release="${javac.version}" debug="${javac.debug}" includeantruntime="false">
+			<classpath>
+				<!-- build libraries -->
+				<path refid="build.classpath" />
+			</classpath>
+		</javac>
+	</target>
+
+	<target name="jar" depends="compile" description="Builds a JAR file from the project.">
+		<module-info />
+		<jar-bin />
+	</target>
+	
+	<target name="deb" depends="jar">
+		<deb />
+	</target>
+
+	<target name="jar-doc" description="Builds a javadoc JAR file from the project.">
+		<!-- create javadoc JAR -->
+		<javadoc destdir="${doc.dir}" author="true" version="true" use="true" windowtitle="${javadoc.windowtitle}" doctitle="${javadoc.doctitle}" bottom="${javadoc.buttom}">
+			<packageset dir="${src.dir}" defaultexcludes="yes" />
+			<classpath>
+				<path refid="build.classpath" />
+			</classpath>
+			<group title="Packages" packages="havis.opcua.message.*" />
+			<link offline="true" href="http://docs.oracle.com/javase/7/docs/api/" packagelistURL="${api.url}/javase/7/" />
+		</javadoc>
+		<jar jarfile="${build.dir}/${basename}-javadoc.jar" update="true" basedir="${doc.dir}" />
+	</target>
+
+	<target name="jar-src" description="Builds a JAR file containing the sources of the project.">
+		<!-- create sources JAR -->
+		<jar jarfile="${build.dir}/${basename}-sources.jar" update="true">
+			<fileset dir="${src.dir}" />
+		</jar>
+	</target>
+
+	<target name="publish" depends="deb, jar, jar-doc, jar-src" description="Publishes the JAR to the repository">
+		<ivy:resolve file="${resources.dir}/ivy.xml" />
+
+		<ivy:publish resolver="${ivy.resolver}" pubrevision="${manifest.Bundle-Version}" status="integration" overwrite="true">
+			<artifacts pattern="${build.dir}/[artifact].[ext]" />
+		</ivy:publish>
+	</target>
+
+</project>

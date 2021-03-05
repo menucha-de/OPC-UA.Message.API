@@ -1,0 +1,10 @@
+Bundle-Name: Ha-VIS OPC-UA Message API
+Bundle-SymbolicName: havis.opcua.message-api
+Bundle-Version: 2.7.0
+Implementation-Version: 2.7
+Bundle-ManifestVersion: 2
+Bundle-Vendor: HARTING IT_SD
+Export-Package: 
+ havis.opcua.message,
+ havis.opcua.message.exception
+
